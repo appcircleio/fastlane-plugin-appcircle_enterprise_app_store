@@ -5,14 +5,14 @@ require 'fastlane/plugin/appcircle_enterprise_store/version'
 Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-appcircle_enterprise_store'
   spec.version       = Fastlane::AppcircleEnterpriseStore::VERSION
-  spec.author        = 'Guven Karanfil'
-  spec.email         = 'guven.karanfil@smartface.io'
+  spec.author        = 'appcircleio'
+  spec.email         = 'cloud@appcircle.io'
 
   spec.summary       = 'Efficiently publish your apps to Appcircle Enterprise Store'
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-appcircle_enterprise_store"
+  spec.homepage      = "https://github.com/appcircleio/fastlane-plugin-appcircle_enterprise_store"
   spec.license       = "MIT"
 
-  spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
+  spec.files         = Dir["lib/**/*"] + Dir["images/**"] + %w(README.md LICENSE)
   spec.require_paths = ['lib']
   spec.metadata['rubygems_mfa_required'] = 'true'
   spec.required_ruby_version = '>= 2.6'
