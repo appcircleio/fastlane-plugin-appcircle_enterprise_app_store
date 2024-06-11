@@ -15,19 +15,9 @@ module Fastlane
         releaseNotes = params[:releaseNotes]
         publishType = params[:publishType]
 
-        UI.message("AccessToken: #{accessToken}")
-        UI.message("entProfileId: #{entProfileId}")
-        UI.message("appPath: #{appPath}")
-        UI.message("summary: #{summary}")
-        UI.message("releaseNotes: #{releaseNotes}")
-        UI.message("publishType: #{publishType}")
-
-
         self.ac_login(accessToken)
         self.uploadToProfile(entProfileId, appPath, summary, releaseNotes, publishType)
         self.get_version_list(entProfileId)
-
-        UI.message("The appcircle_enterprise_store plugin is working!")
       end
 
       def self.ac_login(accessToken)
@@ -41,7 +31,6 @@ module Fastlane
 
 
       def self.checkTaskStatus(taskId)
-        UI.message("Checking the task status for the task ID: #{taskId}")
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
         timeout = 1
         jwtToken = `appcircle config get AC_ACCESS_TOKEN -o json`
@@ -52,18 +41,14 @@ module Fastlane
           stateValue = JSON.parse(response.body)["stateValue"]
           
           if stateValue == 1
-            UI.success("Task is in progress: #{stateValue}")
             return checkTaskStatus(taskId)
           else 
-            UI.success("Request was successful: #{stateValue}")
             return true
           end
-
         else
           UI.error("Request failed with response code #{response.code} and message #{response.message}")
           raise "Request failed"
         end
-
         return false
       end
 
@@ -74,13 +59,9 @@ module Fastlane
         taskId = JSON.parse(ac_upload_profile)["taskId"]
         apiAccessTokenString = `appcircle config get AC_ACCESS_TOKEN -o json`
         apiAccessToken = JSON.parse(apiAccessTokenString)
-        UI.success("Uploaded the application to the Appcircle Enterprise Store successfully. #{ac_upload_profile}")
-        UI.success("API TOKEN: #{apiAccessToken["AC_ACCESS_TOKEN"]}")
-        UI.success("URL: https://api.appcircle.io/v1/task/#{taskId}")
         
         if $?.success?
           result = self.checkTaskStatus(taskId)
-          UI.success("Task is completed: #{result}")
           if result
             appVersionId = self.get_version_list(entProfileId)
             self.publishToStore(entProfileId, appVersionId, summary, releaseNotes, publishType)
@@ -110,24 +91,19 @@ module Fastlane
 
       def self.get_version_list(entProfileId)
         store_version_list = `appcircle enterprise-app-store version list --entProfileId #{entProfileId}  -o json`;
-        first_id = self.process_items(store_version_list)
-        UI.message("store_version_list: #{store_version_list.class}")
-        UI.message("First item ID: #{first_id}")
-        return first_id
+        appVersionId = self.getVersionId(store_version_list)
+        UI.message("Uploaded App ID: #{appVersionId}")
+        return appVersionId
       end
       
-      def self.process_items(json_string)
+      def self.getVersionId(versions)
         begin
-          items = JSON.parse(json_string)
-          puts "The type of 'items' is: #{items.class}"
+          versionList = JSON.parse(versions)
       
-          if items.is_a?(Array) && !items.empty?
-            first_item_id = items[0]["id"]
-            puts "The first item id is: #{first_item_id}"
-            first_item_id
+          if versionList.is_a?(Array) && !versionList.empty?
+            return versionList[0]["id"]
           else
-            puts "The 'items' variable is not an array or it is empty."
-            nil
+            return nil
           end
         rescue JSON::ParserError => e
           puts "Failed to parse JSON: #{e.message}"
