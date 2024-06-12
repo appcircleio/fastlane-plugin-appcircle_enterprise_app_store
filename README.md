@@ -8,7 +8,7 @@ Appcircle Enterprise Mobile App Store is your own mobile app store for providing
 - **Secure Distribution:** Everything you need for secure, streamlined distribution of your in-house apps.
 - **No MDM Required:** Allows distribution of B2B and B2E applications without the need for an MDM solution and enrollment.
 
-Learn more about [Appcircle Enterprise App Store](https://appcircle.io/enterprise-app-store).
+Learn more about [Appcircle Enterprise App Store](https://appcircle.io/enterprise-app-store?utm_source=fastlane&utm_medium=plugin&utm_campaign=enterprise_app_store).
 
 ## What Sets Apart Appcircle Enterprise Mobile App Store
 
@@ -68,7 +68,7 @@ After adding the plugin to your project, configure your Fastfile as follows:
 
 Utilize environment variables seamlessly by substituting the parameters with $(VARIABLE_NAME) in your task inputs. The extension automatically retrieves values from the specified environment variables within your pipeline.
 
-If you would like to learn more about this extension and how to utilize it in your projects, please [contact us](https://appcircle.io/contact)
+If you would like to learn more about this extension and how to utilize it in your projects, please [contact us](https://appcircle.io/contact?utm_source=fastlane&utm_medium=plugin&utm_campaign=enterprise_app_store)
 
 ## Issues and Feedback
 
