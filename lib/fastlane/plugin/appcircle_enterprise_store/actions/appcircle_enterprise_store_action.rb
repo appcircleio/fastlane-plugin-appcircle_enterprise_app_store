@@ -56,10 +56,13 @@ module Fastlane
         response = self.send_request(uri, apiAccessToken["AC_ACCESS_TOKEN"])
         if response.is_a?(Net::HTTPSuccess)
           stateValue = JSON.parse(response.body)["stateValue"]
-          
           if stateValue == 1
+            sleep(1)
             return checkTaskStatus(taskId)
-          else 
+          elsif stateValue == 2
+            UI.error("Task Id #{taskId} failed with state value #{stateValue}")
+            raise "Upload could not completed successfully"
+          else
             return true
           end
         else
@@ -83,6 +86,8 @@ module Fastlane
             appVersionId = self.get_version_list(entProfileId)
             if publishType != "0"
               self.publishToStore(entProfileId, appVersionId, summary, releaseNotes, publishType)
+            else 
+              UI.success("#{appPath} uploaded to the Appcircle Enterprise Store successfully")
             end
           end
         else
