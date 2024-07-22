@@ -15,6 +15,23 @@ module Fastlane
         releaseNotes = params[:releaseNotes]
         publishType = params[:publishType]
 
+        if accessToken.nil?
+          raise UI.error("Please provide the Appcircle access token to authenticate connections to Appcircle services")
+        elsif entProfileId.nil?
+          raise UI.error("Please provide the Appcircle Enterprise App Store Mobile Profile ID to specify the profile to be used for the publishment. This ID can be found in the Enterprise App Store Mobile module dashboard")
+        elsif appPath.nil?
+          raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
+        elsif summary.nil?
+          raise UI.error("Please provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store")
+        elsif releaseNotes.nil?
+          raise UI.error("Please provide release notes for the application to be published. These notes will be displayed in the Appcircle Enterprise App Store")
+        elsif publishType.nil?
+          raise UI.error("Please specify the publish type for the application. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
+        elsif publishType != "0" && publishType != "1" && publishType != "2"
+          raise UI.error("Please provide a valid publish type. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
+        end
+
+
         self.ac_login(accessToken)
         self.uploadToProfile(entProfileId, appPath, summary, releaseNotes, publishType)
         self.get_version_list(entProfileId)
@@ -39,10 +56,13 @@ module Fastlane
         response = self.send_request(uri, apiAccessToken["AC_ACCESS_TOKEN"])
         if response.is_a?(Net::HTTPSuccess)
           stateValue = JSON.parse(response.body)["stateValue"]
-          
           if stateValue == 1
+            sleep(1)
             return checkTaskStatus(taskId)
-          else 
+          elsif stateValue == 2
+            UI.error("Task Id #{taskId} failed with state value #{stateValue}")
+            raise "Upload could not completed successfully"
+          else
             return true
           end
         else
@@ -64,7 +84,11 @@ module Fastlane
           result = self.checkTaskStatus(taskId)
           if result
             appVersionId = self.get_version_list(entProfileId)
-            self.publishToStore(entProfileId, appVersionId, summary, releaseNotes, publishType)
+            if publishType != "0"
+              self.publishToStore(entProfileId, appVersionId, summary, releaseNotes, publishType)
+            else 
+              UI.success("#{appPath} uploaded to the Appcircle Enterprise Store successfully")
+            end
           end
         else
           raise "Error executing command of uploading the application to the Appcircle Enterprise Store. Please make sure you have provided a valid profile ID and application path.#{ac_upload_profile}"
@@ -92,7 +116,6 @@ module Fastlane
       def self.get_version_list(entProfileId)
         store_version_list = `appcircle enterprise-app-store version list --entProfileId #{entProfileId}  -o json`;
         appVersionId = self.getVersionId(store_version_list)
-        UI.message("Uploaded App ID: #{appVersionId}")
         return appVersionId
       end
       
@@ -135,7 +158,7 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :accessToken,
                                   env_name: "AC_ACCESS_TOKEN",
-                               description: "Provide the Appcircle access token to authenticate connections to Appcircle services. This token allows your Azure DevOps pipeline to interact with Appcircle for distributing applications",
+                               description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
                                   optional: false,
                                       type: String),
 
