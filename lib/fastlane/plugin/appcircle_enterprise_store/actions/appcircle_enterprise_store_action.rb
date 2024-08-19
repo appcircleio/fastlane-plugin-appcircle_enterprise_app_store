@@ -4,12 +4,21 @@ require 'uri'
 require 'json'
 require_relative '../helper/appcircle_enterprise_store_helper'
 
+require_relative 'auth_service'
+require_relative 'upload_service'
+
 module Fastlane
   module Actions
     class AppcircleEnterpriseStoreAction < Action
+      @@apiToken = nil
+      @@profileName = nil
+      @@createProfileIfNotExists = nil
+
       def self.run(params)
         accessToken = params[:accessToken]
-        entProfileId = params[:entProfileId]
+        entProfileName = params[:entProfileName]
+        @@profileName = params[:entProfileName]
+        @@createProfileIfNotExists = params[:createProfileIfNotExists]
         appPath = params[:appPath]
         summary = params[:summary]
         releaseNotes = params[:releaseNotes]
@@ -17,8 +26,8 @@ module Fastlane
 
         if accessToken.nil?
           raise UI.error("Please provide the Appcircle access token to authenticate connections to Appcircle services")
-        elsif entProfileId.nil?
-          raise UI.error("Please provide the Appcircle Enterprise App Store Mobile Profile ID to specify the profile to be used for the publishment. This ID can be found in the Enterprise App Store Mobile module dashboard")
+        elsif entProfileName.nil?
+          raise UI.error("Please provide the Appcircle Enterprise App Store profile name for the publishment. This name can be found in the Enterprise App Store module dashboard")
         elsif appPath.nil?
           raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
         elsif summary.nil?
@@ -33,16 +42,19 @@ module Fastlane
 
 
         self.ac_login(accessToken)
-        self.uploadToProfile(entProfileId, appPath, summary, releaseNotes, publishType)
-        self.get_version_list(entProfileId)
+        profileId = UploadService.getProfileId(authToken: @@apiToken, profileName: entProfileName, createProfileIfNotExists: @@createProfileIfNotExists)
+        self.uploadToProfile(profileId, appPath, summary, releaseNotes, publishType)
       end
 
+
       def self.ac_login(accessToken)
-        ac_login = `appcircle login --pat #{accessToken}`
-        if $?.success?
-          UI.success("Logged in to Appcircle successfully.")
-        else
-          raise "Error executing command of logging to Appcircle. Please make sure you have installed Appcircle CLI and provided a valid access token. For more information, please visit https://docs.appcircle.io/appcircle-api/api-authentication#generatingmanaging-the-personal-api-tokens #{ac_login}"
+        begin
+          user = AuthService.get_ac_token(pat: accessToken)
+          UI.success("Login is successful.")
+          @@apiToken = user.accessToken
+        rescue => e
+          UI.error("Login failed: #{e.message}")
+          raise e
         end
       end
 
@@ -50,58 +62,64 @@ module Fastlane
       def self.checkTaskStatus(taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
         timeout = 1
-        jwtToken = `appcircle config get AC_ACCESS_TOKEN -o json`
-        apiAccessToken = JSON.parse(jwtToken)
         
-        response = self.send_request(uri, apiAccessToken["AC_ACCESS_TOKEN"])
+        response = self.send_request(uri, @@apiToken)
         if response.is_a?(Net::HTTPSuccess)
           stateValue = JSON.parse(response.body)["stateValue"]
           if stateValue == 1
             sleep(1)
             return checkTaskStatus(taskId)
-          elsif stateValue == 2
-            UI.error("Task Id #{taskId} failed with state value #{stateValue}")
-            raise "Upload could not completed successfully"
-          else
+          end
+          if stateValue == 3
             return true
+          else
+            taskStatus = {
+              0 => "Unknown",
+              1 => "Begin",
+              2 => "Canceled",
+              3 => 'Completed',
+            }
+            raise UI.error("#{taskId} id upload request failed with status #{taskStatus[stateValue]}.")
           end
         else
-          UI.error("Request failed with response code #{response.code} and message #{response.message}")
-          raise "Request failed"
+          "Upload failed with response code #{response.code} and message '#{response.message}'"
+          raise
         end
-        return false
       end
 
 
       def self.uploadToProfile(entProfileId, appPath, summary, releaseNotes, publishType)
-        # `appcircle enterprise-app-store version upload-for-profile --entProfileId ${profileId} --app ${app}`;
-        ac_upload_profile = `appcircle enterprise-app-store version upload-for-profile --entProfileId #{entProfileId} --app #{appPath} -o json`
-        taskId = JSON.parse(ac_upload_profile)["taskId"]
-        apiAccessTokenString = `appcircle config get AC_ACCESS_TOKEN -o json`
-        apiAccessToken = JSON.parse(apiAccessTokenString)
-        
-        if $?.success?
-          result = self.checkTaskStatus(taskId)
-          if result
-            appVersionId = self.get_version_list(entProfileId)
-            if publishType != "0"
-              self.publishToStore(entProfileId, appVersionId, summary, releaseNotes, publishType)
-            else 
-              UI.success("#{appPath} uploaded to the Appcircle Enterprise Store successfully")
-            end
+        response = UploadService.upload_artifact(token: @@apiToken, app: appPath, entProfileId: entProfileId)
+        result = self.checkTaskStatus(response["taskId"])
+
+        if result
+          profileId = entProfileId
+          if profileId.nil?
+            profileId = UploadService.getProfileId(authToken: @@apiToken, profileName: @@profileName, createProfileIfNotExists: @createProfileIfNotExists)
           end
-        else
-          raise "Error executing command of uploading the application to the Appcircle Enterprise Store. Please make sure you have provided a valid profile ID and application path.#{ac_upload_profile}"
+          appVersions = UploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId)
+          appVersionId = UploadService.getVersionId(versionList: appVersions)
+          if publishType != "0"
+            self.publishToStore(profileId, appVersionId, summary, releaseNotes, publishType)
+          end
+          UI.success("#{appPath} uploaded to the Appcircle Enterprise Store successfully")
         end
       end
 
       def self.publishToStore(entProfileId, entVersionId, summary, releaseNote, publishType)
-        # `appcircle enterprise-app-store version publish --entProfileId ${entProfileId} --entVersionId ${entVersionId} --summary "${summary}" --releaseNotes "${releaseNote}" --publishType ${publishType}`;
-        publish_command = `appcircle enterprise-app-store version publish --entProfileId #{entProfileId} --entVersionId #{entVersionId} --summary "#{summary}" --releaseNotes "#{releaseNote}" --publishType #{publishType}`
-        if $?.success?
-          UI.success("Published the application to the Appcircle Enterprise Store successfully\n#{publish_command}")
-        else
-          raise "Error executing command of publishing the application to the Appcircle Enterprise Store. Please make sure you have provided a valid profile ID, version ID, summary, release notes, and publish type. #{publish_command}"
+        begin
+          options = {
+            auth_token: @@apiToken,
+            ent_profile_id: entProfileId,
+            ent_version_id: entVersionId,
+            summary: summary,
+            release_notes: releaseNote,
+            publish_type: publishType
+          }
+          response = UploadService.publishVersion(options)
+        rescue => e
+          UI.error("App could not publish at Enterprise App Store. #{e&.response}")
+          raise e
         end
       end
 
@@ -111,30 +129,6 @@ module Fastlane
         request = Net::HTTP::Get.new(uri.request_uri)
         request["Authorization"] = "Bearer #{access_token}"
         http.request(request)
-      end
-
-      def self.get_version_list(entProfileId)
-        store_version_list = `appcircle enterprise-app-store version list --entProfileId #{entProfileId}  -o json`;
-        appVersionId = self.getVersionId(store_version_list)
-        return appVersionId
-      end
-      
-      def self.getVersionId(versions)
-        begin
-          versionList = JSON.parse(versions)
-      
-          if versionList.is_a?(Array) && !versionList.empty?
-            return versionList[0]["id"]
-          else
-            return nil
-          end
-        rescue JSON::ParserError => e
-          puts "Failed to parse JSON: #{e.message}"
-          nil
-        rescue => e
-          puts "An error occurred: #{e.message}"
-          nil
-        end
       end
 
       def self.description
@@ -162,11 +156,17 @@ module Fastlane
                                   optional: false,
                                       type: String),
 
-          FastlaneCore::ConfigItem.new(key: :entProfileId,
-                                  env_name: "AC_ENT_PROFILE_ID",
-                               description: "Provide the Appcircle Enterprise App Store Mobile Profile ID to specify the profile to be used for the publishment. This ID can be found in the Enterprise App Store Mobile module dashboard",
+          FastlaneCore::ConfigItem.new(key: :entProfileName,
+                                  env_name: "AC_ENT_PROFILE_NAME",
+                               description: "Provide the Appcircle Enterprise App Store profile name for the publishment. This name can be found in the Enterprise App Store module dashboard",
                                   optional: false,
-                                      type: String),                                      
+                                      type: String),
+
+          FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
+                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
+                                       description: "If the profile does not exist, create a new profile with the given entProfileName paramater",
+                                       optional: true,
+                                       type: Boolean),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                   env_name: "AC_APP_PATH",

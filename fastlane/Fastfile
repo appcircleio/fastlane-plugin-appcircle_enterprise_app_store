@@ -1,3 +1,11 @@
 lane :test do
-  appcircle_enterprise_store
+  appcircle_enterprise_store(
+      accessToken: ENV["AC_ACCESS_TOKEN"],
+      entProfileName: ENV["AC_ENT_PROFILE_NAME"],
+      createProfileIfNotExists: true,
+      appPath: ENV["AC_APP_PATH"],
+      summary: ENV["AC_SUMMARY"],
+      releaseNotes: ENV["AC_RELEASE_NOTES"],
+      publishType: ENV["AC_PUBLISH_TYPE"]
+    )
 end
