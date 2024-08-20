@@ -7,13 +7,8 @@ BASE_URL = "https://api.appcircle.io"
 
 
 module UploadService
-  def self.upload_artifact(token:, app:, entProfileId:)
-    url = ""
-    if entProfileId.nil?
-      url = "https://api.appcircle.io/store/v2/profiles/app-versions"
-    else
-      url = "https://api.appcircle.io/store/v2/profiles/#{entProfileId}/app-versions"
-    end
+  def self.upload_artifact(token:, app:)
+    url = "https://api.appcircle.io/store/v2/profiles/app-versions"
     headers = {
       Authorization: "Bearer #{token}",
       content_type: :multipart
@@ -88,7 +83,7 @@ module UploadService
   end
 
   def self.getEntProfiles(authToken:)
-    url = "#{BASE_URL}/store/v2/profiles"
+    url = "#{BASE_URL}/store/v2/profiles?Sort=desc"
     headers = {
       Authorization: "Bearer #{authToken}",
       accept: 'application/json'
@@ -106,20 +101,10 @@ module UploadService
     end
   end
 
-  def self.getProfileId(authToken:, profileName:, createProfileIfNotExists:)
-    profileId = nil
-
+  def self.getProfileId(authToken:)
     profiles = self.getEntProfiles(authToken: authToken)
-    profiles.each do |profile|
-      if profile["name"] == profileName
-        profileId = profile['id']
-      end
-    end
+    sortedProfiles = profiles.sort_by { |profile| DateTime.parse(profile["lastBinaryReceivedDate"]) }.reverse
 
-    if profileId.nil? && !createProfileIfNotExists
-      raise "Error: The Enterprise App Store profile '#{profileName}' could not be found. The option 'createProfileIfNotExists' is set to false, so no new profile was created. To automatically create a new profile if it doesn't exist, set 'createProfileIfNotExists' to true."
-    end
-
-    return profileId
+    return sortedProfiles[0]['id']
   end
 end

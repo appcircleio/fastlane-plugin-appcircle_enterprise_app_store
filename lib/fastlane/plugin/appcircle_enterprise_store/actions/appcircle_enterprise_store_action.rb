@@ -4,21 +4,16 @@ require 'uri'
 require 'json'
 require_relative '../helper/appcircle_enterprise_store_helper'
 
-require_relative 'auth_service'
-require_relative 'upload_service'
+require_relative '../helper/auth_service'
+require_relative '../helper/upload_service'
 
 module Fastlane
   module Actions
     class AppcircleEnterpriseStoreAction < Action
       @@apiToken = nil
-      @@profileName = nil
-      @@createProfileIfNotExists = nil
 
       def self.run(params)
         accessToken = params[:accessToken]
-        entProfileName = params[:entProfileName]
-        @@profileName = params[:entProfileName]
-        @@createProfileIfNotExists = params[:createProfileIfNotExists]
         appPath = params[:appPath]
         summary = params[:summary]
         releaseNotes = params[:releaseNotes]
@@ -26,8 +21,6 @@ module Fastlane
 
         if accessToken.nil?
           raise UI.error("Please provide the Appcircle access token to authenticate connections to Appcircle services")
-        elsif entProfileName.nil?
-          raise UI.error("Please provide the Appcircle Enterprise App Store profile name for the publishment. This name can be found in the Enterprise App Store module dashboard")
         elsif appPath.nil?
           raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
         elsif summary.nil?
@@ -42,8 +35,7 @@ module Fastlane
 
 
         self.ac_login(accessToken)
-        profileId = UploadService.getProfileId(authToken: @@apiToken, profileName: entProfileName, createProfileIfNotExists: @@createProfileIfNotExists)
-        self.uploadToProfile(profileId, appPath, summary, releaseNotes, publishType)
+        self.uploadToProfile(appPath, summary, releaseNotes, publishType)
       end
 
 
@@ -88,15 +80,12 @@ module Fastlane
       end
 
 
-      def self.uploadToProfile(entProfileId, appPath, summary, releaseNotes, publishType)
-        response = UploadService.upload_artifact(token: @@apiToken, app: appPath, entProfileId: entProfileId)
+      def self.uploadToProfile(appPath, summary, releaseNotes, publishType)
+        response = UploadService.upload_artifact(token: @@apiToken, app: appPath)
         result = self.checkTaskStatus(response["taskId"])
 
         if result
-          profileId = entProfileId
-          if profileId.nil?
-            profileId = UploadService.getProfileId(authToken: @@apiToken, profileName: @@profileName, createProfileIfNotExists: @createProfileIfNotExists)
-          end
+          profileId = UploadService.getProfileId(authToken: @@apiToken)
           appVersions = UploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId)
           appVersionId = UploadService.getVersionId(versionList: appVersions)
           if publishType != "0"
@@ -155,18 +144,6 @@ module Fastlane
                                description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
                                   optional: false,
                                       type: String),
-
-          FastlaneCore::ConfigItem.new(key: :entProfileName,
-                                  env_name: "AC_ENT_PROFILE_NAME",
-                               description: "Provide the Appcircle Enterprise App Store profile name for the publishment. This name can be found in the Enterprise App Store module dashboard",
-                                  optional: false,
-                                      type: String),
-
-          FastlaneCore::ConfigItem.new(key: :createProfileIfNotExists,
-                                       env_name: "AC_CREATE_PROFILE_IF_NOT_EXISTS",
-                                       description: "If the profile does not exist, create a new profile with the given entProfileName paramater",
-                                       optional: true,
-                                       type: Boolean),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                   env_name: "AC_APP_PATH",
