@@ -19,6 +19,13 @@ module Fastlane
         releaseNotes = params[:releaseNotes]
         publishType = params[:publishType]
 
+        valid_extensions = ['.apk', '.ipa']
+
+        file_extension = File.extname(appPath).downcase
+        unless valid_extensions.include?(file_extension)
+          raise "Invalid file extension: #{file_extension}. For Android, use .apk. For iOS, use .ipa."
+        end
+
         if accessToken.nil?
           raise UI.error("Please provide the Appcircle access token to authenticate connections to Appcircle services")
         elsif appPath.nil?
