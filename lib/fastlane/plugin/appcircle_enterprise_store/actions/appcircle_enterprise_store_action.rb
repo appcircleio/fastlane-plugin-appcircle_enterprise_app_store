@@ -13,7 +13,7 @@ module Fastlane
       @@apiToken = nil
 
       def self.run(params)
-        accessToken = params[:accessToken]
+        personalAPIToken = params[:personalAPIToken]
         appPath = params[:appPath]
         summary = params[:summary]
         releaseNotes = params[:releaseNotes]
@@ -26,8 +26,8 @@ module Fastlane
           raise "Invalid file extension: #{file_extension}. For Android, use .apk. For iOS, use .ipa."
         end
 
-        if accessToken.nil?
-          raise UI.error("Please provide the Appcircle access token to authenticate connections to Appcircle services")
+        if personalAPIToken.nil?
+          raise UI.error("Please provide Personal API Token to authenticate connections to Appcircle services")
         elsif appPath.nil?
           raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
         elsif summary.nil?
@@ -41,7 +41,7 @@ module Fastlane
         end
 
 
-        self.ac_login(accessToken)
+        self.ac_login(personalAPIToken)
         self.uploadToProfile(appPath, summary, releaseNotes, publishType)
       end
 
@@ -146,9 +146,9 @@ module Fastlane
 
       def self.available_options
         [
-          FastlaneCore::ConfigItem.new(key: :accessToken,
-                                  env_name: "AC_ACCESS_TOKEN",
-                               description: "Provide the Appcircle access token to authenticate connections to Appcircle services",
+          FastlaneCore::ConfigItem.new(key: :personalAPIToken,
+                                  env_name: "AC_PERSONAL_API_TOKEN",
+                               description: "Provide Personal API Token to authenticate Appcircle services",
                                   optional: false,
                                       type: String),
 

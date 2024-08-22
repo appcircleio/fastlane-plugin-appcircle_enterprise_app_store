@@ -1,6 +1,6 @@
 lane :test do
   appcircle_enterprise_store(
-      accessToken: ENV["AC_ACCESS_TOKEN"],
+      personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
       appPath: ENV["AC_APP_PATH"],
       summary: ENV["AC_SUMMARY"],
       releaseNotes: ENV["AC_RELEASE_NOTES"],
