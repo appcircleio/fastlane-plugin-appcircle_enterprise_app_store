@@ -54,7 +54,7 @@ After adding the plugin to your project, configure your Fastfile as follows:
 ```yml
   lane :distribute_app_store do
     appcircle_enterprise_store(
-      accessToken: "$(AC_ACCESS_TOKEN)",
+      personalAPIToken: "$(AC_ACCESS_TOKEN)",
       appPath: "$(APP_PATH)",
       summary: "$(SUMMARY)",
       releaseNotes: "$(RELEASE_NOTE)",
