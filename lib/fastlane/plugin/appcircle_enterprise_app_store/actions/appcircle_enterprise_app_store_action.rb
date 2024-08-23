@@ -2,14 +2,16 @@ require 'fastlane/action'
 require 'net/http'
 require 'uri'
 require 'json'
-require_relative '../helper/appcircle_enterprise_store_helper'
+
+require 'fastlane/action'
+require_relative '../helper/appcircle_enterprise_app_store_helper'
 
 require_relative '../helper/auth_service'
 require_relative '../helper/upload_service'
 
 module Fastlane
   module Actions
-    class AppcircleEnterpriseStoreAction < Action
+    class AppcircleEnterpriseAppStoreAction < Action
       @@apiToken = nil
 
       def self.run(params)

@@ -1,10 +1,10 @@
 lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'fastlane/plugin/appcircle_enterprise_store/version'
+require 'fastlane/plugin/appcircle_enterprise_app_store/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'fastlane-plugin-appcircle_enterprise_store'
-  spec.version       = Fastlane::AppcircleEnterpriseStore::VERSION
+  spec.name          = 'fastlane-plugin-appcircle_enterprise_app_store'
+  spec.version       = Fastlane::AppcircleEnterpriseAppStore::VERSION
   spec.author        = 'appcircleio'
   spec.email         = 'cloud@appcircle.io'
 
