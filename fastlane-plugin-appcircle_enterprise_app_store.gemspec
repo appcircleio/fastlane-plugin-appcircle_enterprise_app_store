@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = 'cloud@appcircle.io'
 
   spec.summary       = 'Efficiently publish your apps to Appcircle Enterprise Store'
-  spec.homepage      = "https://github.com/appcircleio/fastlane-plugin-appcircle_enterprise_store"
+  spec.homepage      = "https://github.com/appcircleio/fastlane-plugin-appcircle_enterprise_app_store"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
