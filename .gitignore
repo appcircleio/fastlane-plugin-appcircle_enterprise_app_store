@@ -10,3 +10,9 @@ fastlane/README.md
 fastlane/report.xml
 coverage
 test-results
+
+
+.env
+.idea/
+
+.DS_Store

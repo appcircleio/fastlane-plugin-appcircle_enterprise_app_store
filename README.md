@@ -46,7 +46,7 @@ To generate a Personal API Token:
 This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `appcircle_enterprise_store`, add it to your project by running:
 
 ```bash
-fastlane add_plugin appcircle_enterprise_store
+fastlane add_plugin appcircle_enterprise_app_store
 ```
 
 After adding the plugin to your project, configure your Fastfile as follows:
@@ -54,8 +54,7 @@ After adding the plugin to your project, configure your Fastfile as follows:
 ```yml
   lane :distribute_app_store do
     appcircle_enterprise_store(
-      accessToken: "$(AC_ACCESS_TOKEN)",
-      entProfileId: "$(ENTERPRISE_PROFILE_ID)",
+      personalAPIToken: "$(AC_ACCESS_TOKEN)",
       appPath: "$(APP_PATH)",
       summary: "$(SUMMARY)",
       releaseNotes: "$(RELEASE_NOTE)",
