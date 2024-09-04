@@ -29,6 +29,19 @@ Learn more about [Appcircle Enterprise App Store](https://appcircle.io/enterpris
 
 These features make the Appcircle Enterprise Mobile App Store a powerful tool for securely and efficiently distributing in-house applications, offering flexibility, enhanced security, and a streamlined workflow.
 
+## System Requirements
+
+**Compatible Agents:**
+
+- macOS 14.2, 14.5
+
+**Supported Version:**
+
+- Fastlane 2.222.0
+- Ruby 3.2.2
+
+Note: We currently support **Appcircle Cloud**, with **self-hosted** support planned in our roadmap.
+
 ![Enterprise App Store Dashboard](https://cdn.appcircle.io/docs/assets/entstore-profilelist.png)
 
 ### Generating/Managing the Personal API Tokens
@@ -43,7 +56,7 @@ To generate a Personal API Token:
 
 ### Getting Started
 
-This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `appcircle_enterprise_store`, add it to your project by running:
+This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To get started with `appcircle_enterprise_app_store`, add it to your project by running:
 
 ```bash
 fastlane add_plugin appcircle_enterprise_app_store
@@ -53,8 +66,8 @@ After adding the plugin to your project, configure your Fastfile as follows:
 
 ```yml
   lane :distribute_app_store do
-    appcircle_enterprise_store(
-      personalAPIToken: "$(AC_ACCESS_TOKEN)",
+    appcircle_enterprise_app_store(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
       appPath: "$(APP_PATH)",
       summary: "$(SUMMARY)",
       releaseNotes: "$(RELEASE_NOTE)",
@@ -62,6 +75,16 @@ After adding the plugin to your project, configure your Fastfile as follows:
     )
   end
 ```
+
+- `personalAPIToken`: The Appcircle Personal API token is utilized to authenticate and secure access to Appcircle services, ensuring that only authorized users can perform actions within the platform.
+- `appPath`: Indicates the file path to the application that will be uploaded to Appcircle Testing Distribution Profile.
+- `releaseNote`: Contains the details of changes, updates, and improvements made in the current version of the app being published.
+- `Summary`: Used to provide a brief overview of the version of the app that is about to be published.
+- `publishType`: Specifies the publishing status as either none, beta, or live, and must be assigned the values "0", "1", or "2" accordingly.
+
+**Ensure that this action is added after build steps have been completed.**
+
+**If two workflows start simultaneously, the last workflow to reach the publish step will be the up-to-date version on the Enterprise App Store. If these workflows building the same package version, the first publish will be successful, while later deployments with the same version will fail.**
 
 ### Leveraging Environment Variables
 
