@@ -21,17 +21,17 @@ module Fastlane
         releaseNotes = params[:releaseNotes]
         publishType = params[:publishType]
 
-        valid_extensions = ['.apk', '.ipa']
+        valid_extensions = ['.apk', '.aab', '.ipa']
 
         file_extension = File.extname(appPath).downcase
         unless valid_extensions.include?(file_extension)
-          raise "Invalid file extension: #{file_extension}. For Android, use .apk. For iOS, use .ipa."
+          raise "Invalid file extension: #{file_extension}. For Android, use .apk or .aab. For iOS, use .ipa."
         end
 
         if personalAPIToken.nil?
           raise UI.error("Please provide Personal API Token to authenticate connections to Appcircle services")
         elsif appPath.nil?
-          raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
+          raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa file path. For Android, specify the .apk or .aab file path")
         elsif summary.nil?
           raise UI.error("Please provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store")
         elsif releaseNotes.nil?
@@ -156,7 +156,7 @@ module Fastlane
 
           FastlaneCore::ConfigItem.new(key: :appPath,
                                   env_name: "AC_APP_PATH",
-                               description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
+                               description: "Specify the path to your application file. For iOS, this can be a .ipa file path. For Android, specify the .apk or .aab file path",
                                   optional: false,
                                       type: String),                            
 
