@@ -16,6 +16,7 @@ module Fastlane
 
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
+        personalAccessKey = params[:personalAccessKey]
         appPath = params[:appPath]
         summary = params[:summary]
         releaseNotes = params[:releaseNotes]
@@ -28,8 +29,10 @@ module Fastlane
           raise "Invalid file extension: #{file_extension}. For Android, use .apk. For iOS, use .ipa."
         end
 
-        if personalAPIToken.nil?
-          raise UI.error("Please provide Personal API Token to authenticate connections to Appcircle services")
+        if personalAPIToken.nil? && personalAccessKey.nil?
+          raise UI.error("Please provide either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey) to authenticate connections to Appcircle services")
+        elsif !personalAPIToken.nil? && !personalAccessKey.nil?
+          raise UI.error("Please provide only one authentication method: either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey), not both")
         elsif appPath.nil?
           raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
         elsif summary.nil?
@@ -43,14 +46,29 @@ module Fastlane
         end
 
 
-        self.ac_login(personalAPIToken)
+        if !personalAPIToken.nil?
+          self.ac_login_with_pat(personalAPIToken)
+        else
+          self.ac_login_with_pak(personalAccessKey)
+        end
         self.uploadToProfile(appPath, summary, releaseNotes, publishType)
       end
 
 
-      def self.ac_login(accessToken)
+      def self.ac_login_with_pat(accessToken)
         begin
           user = AuthService.get_ac_token(pat: accessToken)
+          UI.success("Login is successful.")
+          @@apiToken = user.accessToken
+        rescue => e
+          UI.error("Login failed: #{e.message}")
+          raise e
+        end
+      end
+
+      def self.ac_login_with_pak(personalAccessKey)
+        begin
+          user = AuthService.get_ac_token_with_pak(personal_access_key: personalAccessKey)
           UI.success("Login is successful.")
           @@apiToken = user.accessToken
         rescue => e
@@ -150,8 +168,14 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
                                   env_name: "AC_PERSONAL_API_TOKEN",
-                               description: "Provide Personal API Token to authenticate Appcircle services",
-                                  optional: false,
+                               description: "Provide Personal API Token to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
+                                  optional: true,
+                                      type: String),
+
+          FastlaneCore::ConfigItem.new(key: :personalAccessKey,
+                                  env_name: "AC_PERSONAL_ACCESS_KEY",
+                               description: "Provide Personal Access Key to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
+                                  optional: true,
                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
