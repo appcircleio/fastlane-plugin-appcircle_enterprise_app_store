@@ -30,60 +30,53 @@ module Fastlane
         end
 
         if personalAPIToken.nil? && personalAccessKey.nil?
-          raise UI.error("Please provide either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey) to authenticate connections to Appcircle services")
+          UI.user_error!("Please provide either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey) to authenticate connections to Appcircle services")
         elsif !personalAPIToken.nil? && !personalAccessKey.nil?
-          raise UI.error("Please provide only one authentication method: either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey), not both")
+          UI.user_error!("Please provide only one authentication method: either Personal API Token (personalAPIToken) or Personal Access Key (personalAccessKey), not both")
         elsif appPath.nil?
-          raise UI.error("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
+          UI.user_error!("Please specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path")
         elsif summary.nil?
-          raise UI.error("Please provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store")
+          UI.user_error!("Please provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store")
         elsif releaseNotes.nil?
-          raise UI.error("Please provide release notes for the application to be published. These notes will be displayed in the Appcircle Enterprise App Store")
+          UI.user_error!("Please provide release notes for the application to be published. These notes will be displayed in the Appcircle Enterprise App Store")
         elsif publishType.nil?
-          raise UI.error("Please specify the publish type for the application. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
+          UI.user_error!("Please specify the publish type for the application. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
         elsif publishType != "0" && publishType != "1" && publishType != "2"
-          raise UI.error("Please provide a valid publish type. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
+          UI.user_error!("Please provide a valid publish type. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type")
         end
 
-
-        if !personalAPIToken.nil?
-          self.ac_login_with_pat(personalAPIToken)
-        else
+        if personalAPIToken.nil?
           self.ac_login_with_pak(personalAccessKey)
+        else
+          self.ac_login_with_pat(personalAPIToken)
         end
         self.uploadToProfile(appPath, summary, releaseNotes, publishType)
       end
 
-
       def self.ac_login_with_pat(accessToken)
-        begin
-          user = AuthService.get_ac_token(pat: accessToken)
-          UI.success("Login is successful.")
-          @@apiToken = user.accessToken
-        rescue => e
-          UI.error("Login failed: #{e.message}")
-          raise e
-        end
+        user = AuthService.get_ac_token(pat: accessToken)
+        UI.success("Login is successful.")
+        @@apiToken = user.accessToken
+      rescue StandardError => e
+        UI.error("Login failed: #{e.message}")
+        raise e
       end
 
       def self.ac_login_with_pak(personalAccessKey)
-        begin
-          user = AuthService.get_ac_token_with_pak(personal_access_key: personalAccessKey)
-          UI.success("Login is successful.")
-          @@apiToken = user.accessToken
-        rescue => e
-          UI.error("Login failed: #{e.message}")
-          raise e
-        end
+        user = AuthService.get_ac_token_with_pak(personal_access_key: personalAccessKey)
+        UI.success("Login is successful.")
+        @@apiToken = user.accessToken
+      rescue StandardError => e
+        UI.error("Login failed: #{e.message}")
+        raise e
       end
-
 
       def self.checkTaskStatus(taskId)
         uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
         timeout = 1
-        
+
         response = self.send_request(uri, @@apiToken)
-        if response.is_a?(Net::HTTPSuccess)
+        if response.kind_of?(Net::HTTPSuccess)
           stateValue = JSON.parse(response.body)["stateValue"]
           if stateValue == 1
             sleep(1)
@@ -96,7 +89,7 @@ module Fastlane
               0 => "Unknown",
               1 => "Begin",
               2 => "Canceled",
-              3 => 'Completed',
+              3 => 'Completed'
             }
             raise UI.error("#{taskId} id upload request failed with status #{taskStatus[stateValue]}.")
           end
@@ -105,7 +98,6 @@ module Fastlane
           raise
         end
       end
-
 
       def self.uploadToProfile(appPath, summary, releaseNotes, publishType)
         response = UploadService.upload_artifact(token: @@apiToken, app: appPath)
@@ -123,20 +115,18 @@ module Fastlane
       end
 
       def self.publishToStore(entProfileId, entVersionId, summary, releaseNote, publishType)
-        begin
-          options = {
-            auth_token: @@apiToken,
-            ent_profile_id: entProfileId,
-            ent_version_id: entVersionId,
-            summary: summary,
-            release_notes: releaseNote,
-            publish_type: publishType
-          }
-          response = UploadService.publishVersion(options)
-        rescue => e
-          UI.error("App could not publish at Enterprise App Store. #{e&.response}")
-          raise e
-        end
+        options = {
+          auth_token: @@apiToken,
+          ent_profile_id: entProfileId,
+          ent_version_id: entVersionId,
+          summary: summary,
+          release_notes: releaseNote,
+          publish_type: publishType
+        }
+        response = UploadService.publishVersion(options)
+      rescue StandardError => e
+        UI.error("App could not publish at Enterprise App Store. #{e&.response}")
+        raise e
       end
 
       def self.send_request(uri, access_token)
@@ -167,40 +157,40 @@ module Fastlane
       def self.available_options
         [
           FastlaneCore::ConfigItem.new(key: :personalAPIToken,
-                                  env_name: "AC_PERSONAL_API_TOKEN",
-                               description: "Provide Personal API Token to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
-                                  optional: true,
-                                      type: String),
+                                       env_name: "AC_PERSONAL_API_TOKEN",
+                                       description: "Provide Personal API Token to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
+                                       optional: true,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :personalAccessKey,
-                                  env_name: "AC_PERSONAL_ACCESS_KEY",
-                               description: "Provide Personal Access Key to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
-                                  optional: true,
-                                      type: String),
+                                       env_name: "AC_PERSONAL_ACCESS_KEY",
+                                       description: "Provide Personal Access Key to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
+                                       optional: true,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :appPath,
-                                  env_name: "AC_APP_PATH",
-                               description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
-                                  optional: false,
-                                      type: String),                            
+                                       env_name: "AC_APP_PATH",
+                                       description: "Specify the path to your application file. For iOS, this can be a .ipa or .xcarchive file path. For Android, specify the .apk or .appbundle file path",
+                                       optional: false,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :summary,
-                                  env_name: "AC_SUMMARY",
-                               description: "Provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store",
-                                  optional: false,
-                                      type: String),
+                                       env_name: "AC_SUMMARY",
+                                       description: "Provide a summary for the application to be published. This summary will be displayed in the Appcircle Enterprise App Store",
+                                       optional: false,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :releaseNotes,
-                                  env_name: "AC_RELEASE_NOTES",
-                               description: "Provide release notes for the application to be published. These notes will be displayed in the Appcircle Enterprise App Store",
-                                  optional: false,
-                                      type: String),
+                                       env_name: "AC_RELEASE_NOTES",
+                                       description: "Provide release notes for the application to be published. These notes will be displayed in the Appcircle Enterprise App Store",
+                                       optional: false,
+                                       type: String),
 
           FastlaneCore::ConfigItem.new(key: :publishType,
-                                  env_name: "AC_PUBLISH_TYPE",
-                               description: "Specify the publish type for the application. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type",
-                                  optional: false,
-                                      type: String),
+                                       env_name: "AC_PUBLISH_TYPE",
+                                       description: "Specify the publish type for the application. This can be 0: None, 1: Beta, 2: Live. Default is 0: None. For more information, provide the number of the publish type",
+                                       optional: false,
+                                       type: String)
         ]
       end
 

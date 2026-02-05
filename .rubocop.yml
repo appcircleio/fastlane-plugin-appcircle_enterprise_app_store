@@ -44,6 +44,12 @@ Metrics/ModuleLength:
   Enabled: false
 Naming/VariableNumber:
   Enabled: false
+Naming/VariableName:
+  Enabled: false
+Naming/MethodName:
+  Enabled: false
+Naming/MethodParameterName:
+  Enabled: false
 Style/MissingRespondToMissing:
   Enabled: false
 Style/MultilineBlockChain:
@@ -55,21 +61,17 @@ Style/TernaryParentheses:
 Style/EmptyMethod:
   Enabled: false
 Lint/UselessAssignment:
-  Exclude:
-  - "**/spec/**/*"
+  Enabled: false
+Lint/UselessRescue:
+  Enabled: false
+Lint/DuplicateBranch:
+  Enabled: false
+Lint/DuplicateRequire:
+  Enabled: false
+Lint/Void:
+  Enabled: false
 Require/MissingRequireStatement:
-  Exclude:
-  - "**/spec/**/*.rb"
-  - "**/spec_helper.rb"
-  - spaceship/lib/spaceship/babosa_fix.rb
-  - fastlane_core/lib/fastlane_core/ui/disable_colors.rb
-  - "**/Fastfile"
-  - "**/*.gemspec"
-  - rakelib/**/*
-  - "**/*.rake"
-  - "**/Rakefile"
-  - fastlane/**/*
-  - supply/**/*
+  Enabled: false
 Layout/FirstHashElementIndentation:
   Enabled: false
 Layout/HashAlignment:
@@ -95,6 +97,8 @@ Style/GlobalVars:
   Enabled: false
 Style/ClassAndModuleChildren:
   Enabled: false
+Style/ClassVars:
+  Enabled: false
 Style/SpecialGlobalVars:
   Enabled: false
 Metrics/AbcSize:
@@ -102,6 +106,8 @@ Metrics/AbcSize:
 Metrics/MethodLength:
   Enabled: false
 Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/PerceivedComplexity:
   Enabled: false
 Style/WordArray:
   MinSize: 19

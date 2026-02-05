@@ -3,7 +3,6 @@ require 'uri'
 require 'cgi'
 require 'json'
 
-
 class UserResponse
   attr_accessor :accessToken
 
@@ -21,7 +20,7 @@ module AuthService
     request = Net::HTTP::Post.new(uri)
     request.content_type = 'application/x-www-form-urlencoded'
     request['Accept'] = 'application/json'
-    
+
     # Encode parameters
     params = { pat: pat }
     request.body = URI.encode_www_form(params)
@@ -31,10 +30,8 @@ module AuthService
       http.request(request)
     end
 
-    
-
     # Check response
-    if response.is_a?(Net::HTTPSuccess)
+    if response.kind_of?(Net::HTTPSuccess)
       response_data = JSON.parse(response.body)
 
       user = UserResponse.new(
@@ -55,7 +52,7 @@ module AuthService
     request = Net::HTTP::Post.new(uri)
     request.content_type = 'application/x-www-form-urlencoded'
     request['Accept'] = 'application/json'
-    
+
     # Encode parameters
     params = { 'personal-access-key' => personal_access_key }
     request.body = URI.encode_www_form(params)
@@ -66,7 +63,7 @@ module AuthService
     end
 
     # Check response
-    if response.is_a?(Net::HTTPSuccess)
+    if response.kind_of?(Net::HTTPSuccess)
       response_data = JSON.parse(response.body)
 
       user = UserResponse.new(
