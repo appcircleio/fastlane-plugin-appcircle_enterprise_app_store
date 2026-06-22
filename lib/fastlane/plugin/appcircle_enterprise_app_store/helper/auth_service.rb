@@ -3,7 +3,6 @@ require 'uri'
 require 'cgi'
 require 'json'
 
-
 class UserResponse
   attr_accessor :accessToken
 
@@ -21,7 +20,7 @@ module AuthService
     request = Net::HTTP::Post.new(uri)
     request.content_type = 'application/x-www-form-urlencoded'
     request['Accept'] = 'application/json'
-    
+
     # Encode parameters
     params = { pat: pat }
     request.body = URI.encode_www_form(params)
@@ -31,10 +30,40 @@ module AuthService
       http.request(request)
     end
 
-    
+    # Check response
+    if response.kind_of?(Net::HTTPSuccess)
+      response_data = JSON.parse(response.body)
+
+      user = UserResponse.new(
+        accessToken: response_data['access_token']
+      )
+
+      return user
+    else
+      raise "HTTP Request failed (#{response.code} #{response.message})"
+    end
+  end
+
+  def self.get_ac_token_with_pak(personal_access_key:)
+    endpoint_url = 'https://auth.appcircle.io/auth/v1/token'
+    uri = URI(endpoint_url)
+
+    # Create HTTP request
+    request = Net::HTTP::Post.new(uri)
+    request.content_type = 'application/x-www-form-urlencoded'
+    request['Accept'] = 'application/json'
+
+    # Encode parameters
+    params = { 'personal-access-key' => personal_access_key }
+    request.body = URI.encode_www_form(params)
+
+    # Make the HTTP request
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+      http.request(request)
+    end
 
     # Check response
-    if response.is_a?(Net::HTTPSuccess)
+    if response.kind_of?(Net::HTTPSuccess)
       response_data = JSON.parse(response.body)
 
       user = UserResponse.new(

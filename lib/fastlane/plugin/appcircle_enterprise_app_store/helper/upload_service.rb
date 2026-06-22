@@ -5,7 +5,6 @@ require 'rest-client'
 
 BASE_URL = "https://api.appcircle.io"
 
-
 module UploadService
   def self.upload_artifact(token:, app:)
     url = "https://api.appcircle.io/store/v2/profiles/app-versions"
@@ -16,10 +15,14 @@ module UploadService
     payload = {
       File: File.new(app, 'rb')
     }
-  
+
     begin
       response = RestClient.post(url, payload, headers)
-      JSON.parse(response.body) rescue response.body
+      begin
+        JSON.parse(response.body)
+      rescue StandardError
+        response.body
+      end
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e
@@ -38,9 +41,7 @@ module UploadService
 
     begin
       response = RestClient.get(url, headers)
-      parsed_response = JSON.parse(response.body)
-
-      parsed_response
+      JSON.parse(response.body)
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e
@@ -49,16 +50,14 @@ module UploadService
   end
 
   def self.getVersionId(versionList:)
-    begin
-      if versionList.is_a?(Array) && !versionList.empty?
-        return versionList[0]["id"]
-      else
-        return nil
-      end
-    rescue => e
-      puts "An error occurred while getting app versions: #{e.message}"
-      raise e
+    if versionList.kind_of?(Array) && !versionList.empty?
+      return versionList[0]["id"]
+    else
+      return nil
     end
+  rescue StandardError => e
+    puts("An error occurred while getting app versions: #{e.message}")
+    raise e
   end
 
   def self.publishVersion(options)
@@ -73,7 +72,7 @@ module UploadService
 
     headers = {
       'Content-Type': 'application/json',
-      'Authorization': "Bearer #{options[:auth_token]}"
+      Authorization: "Bearer #{options[:auth_token]}"
     }
 
     response = RestClient.patch(url, payload.to_json, headers)
@@ -91,9 +90,7 @@ module UploadService
 
     begin
       response = RestClient.get(url, headers)
-      parsed_response = JSON.parse(response.body)
-
-      parsed_response
+      JSON.parse(response.body)
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e
