@@ -13,6 +13,8 @@ module Fastlane
   module Actions
     class AppcircleEnterpriseAppStoreAction < Action
       @@apiToken = nil
+      @@authEndpoint = "https://auth.appcircle.io"
+      @@apiEndpoint = "https://api.appcircle.io"
 
       def self.run(params)
         personalAPIToken = params[:personalAPIToken]
@@ -21,6 +23,8 @@ module Fastlane
         summary = params[:summary]
         releaseNotes = params[:releaseNotes]
         publishType = params[:publishType]
+        @@authEndpoint = params[:authEndpoint]
+        @@apiEndpoint = params[:apiEndpoint]
 
         valid_extensions = ['.apk', '.ipa']
 
@@ -54,7 +58,7 @@ module Fastlane
       end
 
       def self.ac_login_with_pat(accessToken)
-        user = AuthService.get_ac_token(pat: accessToken)
+        user = AuthService.get_ac_token(pat: accessToken, auth_endpoint: @@authEndpoint)
         UI.success("Login is successful.")
         @@apiToken = user.accessToken
       rescue StandardError => e
@@ -63,7 +67,7 @@ module Fastlane
       end
 
       def self.ac_login_with_pak(personalAccessKey)
-        user = AuthService.get_ac_token_with_pak(personal_access_key: personalAccessKey)
+        user = AuthService.get_ac_token_with_pak(personal_access_key: personalAccessKey, auth_endpoint: @@authEndpoint)
         UI.success("Login is successful.")
         @@apiToken = user.accessToken
       rescue StandardError => e
@@ -72,7 +76,7 @@ module Fastlane
       end
 
       def self.checkTaskStatus(taskId)
-        uri = URI.parse("https://api.appcircle.io/task/v1/tasks/#{taskId}")
+        uri = URI.parse("#{@@apiEndpoint}/task/v1/tasks/#{taskId}")
         timeout = 1
 
         response = self.send_request(uri, @@apiToken)
@@ -91,21 +95,20 @@ module Fastlane
               2 => "Canceled",
               3 => 'Completed'
             }
-            raise UI.error("#{taskId} id upload request failed with status #{taskStatus[stateValue]}.")
+            UI.user_error!("#{taskId} id upload request failed with status #{taskStatus[stateValue]}.")
           end
         else
-          "Upload failed with response code #{response.code} and message '#{response.message}'"
-          raise
+          UI.user_error!("Upload failed with response code #{response.code} and message '#{response.message}'.")
         end
       end
 
       def self.uploadToProfile(appPath, summary, releaseNotes, publishType)
-        response = UploadService.upload_artifact(token: @@apiToken, app: appPath)
+        response = UploadService.upload_artifact(token: @@apiToken, app: appPath, api_endpoint: @@apiEndpoint)
         result = self.checkTaskStatus(response["taskId"])
 
         if result
-          profileId = UploadService.getProfileId(authToken: @@apiToken)
-          appVersions = UploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId)
+          profileId = UploadService.getProfileId(authToken: @@apiToken, api_endpoint: @@apiEndpoint)
+          appVersions = UploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId, api_endpoint: @@apiEndpoint)
           appVersionId = UploadService.getVersionId(versionList: appVersions)
           if publishType != "0"
             self.publishToStore(profileId, appVersionId, summary, releaseNotes, publishType)
@@ -121,7 +124,8 @@ module Fastlane
           ent_version_id: entVersionId,
           summary: summary,
           release_notes: releaseNote,
-          publish_type: publishType
+          publish_type: publishType,
+          api_endpoint: @@apiEndpoint
         }
         response = UploadService.publishVersion(options)
       rescue StandardError => e
@@ -166,6 +170,20 @@ module Fastlane
                                        env_name: "AC_PERSONAL_ACCESS_KEY",
                                        description: "Provide Personal Access Key to authenticate Appcircle services (use either personalAPIToken or personalAccessKey)",
                                        optional: true,
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :authEndpoint,
+                                       env_name: "AC_AUTH_ENDPOINT",
+                                       description: "Optional: Authentication endpoint URL for self-hosted Appcircle installations. Defaults to the Appcircle cloud",
+                                       optional: true,
+                                       default_value: "https://auth.appcircle.io",
+                                       type: String),
+
+          FastlaneCore::ConfigItem.new(key: :apiEndpoint,
+                                       env_name: "AC_API_ENDPOINT",
+                                       description: "Optional: API endpoint URL for self-hosted Appcircle installations. Defaults to the Appcircle cloud",
+                                       optional: true,
+                                       default_value: "https://api.appcircle.io",
                                        type: String),
 
           FastlaneCore::ConfigItem.new(key: :appPath,

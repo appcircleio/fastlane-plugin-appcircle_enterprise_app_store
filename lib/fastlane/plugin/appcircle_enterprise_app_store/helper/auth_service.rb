@@ -12,8 +12,8 @@ class UserResponse
 end
 
 module AuthService
-  def self.get_ac_token(pat:)
-    endpoint_url = 'https://auth.appcircle.io/auth/v2/token'
+  def self.get_ac_token(pat:, auth_endpoint: 'https://auth.appcircle.io')
+    endpoint_url = "#{auth_endpoint}/auth/v2/token"
     uri = URI(endpoint_url)
 
     # Create HTTP request
@@ -44,8 +44,8 @@ module AuthService
     end
   end
 
-  def self.get_ac_token_with_pak(personal_access_key:)
-    endpoint_url = 'https://auth.appcircle.io/auth/v1/token'
+  def self.get_ac_token_with_pak(personal_access_key:, auth_endpoint: 'https://auth.appcircle.io')
+    endpoint_url = "#{auth_endpoint}/auth/v1/token"
     uri = URI(endpoint_url)
 
     # Create HTTP request
