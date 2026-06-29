@@ -105,6 +105,8 @@ If you run a self-hosted Appcircle installation, point the action to your own en
 
 **If two workflows start simultaneously, the last workflow to reach the publish step will be the up-to-date version on the Enterprise App Store. If these workflows building the same package version, the first publish will be successful, while later deployments with the same version will fail.**
 
+> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
+
 ### Leveraging Environment Variables
 
 Utilize environment variables seamlessly by substituting the parameters with $(VARIABLE_NAME) in your task inputs. The extension automatically retrieves values from the specified environment variables within your pipeline.
