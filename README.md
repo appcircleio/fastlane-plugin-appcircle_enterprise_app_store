@@ -82,9 +82,30 @@ After adding the plugin to your project, configure your Fastfile as follows:
 - `Summary`: Used to provide a brief overview of the version of the app that is about to be published.
 - `publishType`: Specifies the publishing status as either none, beta, or live, and must be assigned the values "0", "1", or "2" accordingly.
 
+### Self-Hosted Appcircle
+
+If you run a self-hosted Appcircle installation, point the action to your own endpoints with the optional `authEndpoint` and `apiEndpoint` parameters. Both default to the Appcircle cloud, so existing cloud users do not need to set them.
+
+- `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
+- `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+
+```ruby
+    appcircle_enterprise_app_store(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+      authEndpoint: "https://auth.my-appcircle.example.com",
+      apiEndpoint: "https://api.my-appcircle.example.com",
+      appPath: "$(AC_APP_PATH)",
+      summary: "$(SUMMARY)",
+      releaseNotes: "$(RELEASE_NOTES)",
+      publishType: "$(PUBLISH_TYPE)"
+    )
+```
+
 **Ensure that this action is added after build steps have been completed.**
 
 **If two workflows start simultaneously, the last workflow to reach the publish step will be the up-to-date version on the Enterprise App Store. If these workflows building the same package version, the first publish will be successful, while later deployments with the same version will fail.**
+
+> **Self-signed or private CA certificates:** If your self-hosted Appcircle server uses a self-signed certificate (or one issued by a private/internal CA), requests will fail certificate validation. The plugin does not disable TLS verification. Trust the server's CA on the machine running Fastlane — add it to the system certificate store, or point the `SSL_CERT_FILE` environment variable at a PEM bundle that includes it.
 
 ### Leveraging Environment Variables
 

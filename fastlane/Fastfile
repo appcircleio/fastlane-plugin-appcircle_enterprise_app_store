@@ -1,9 +1,9 @@
 lane :test do
   appcircle_enterprise_app_store(
-      personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
-      appPath: ENV["AC_APP_PATH"],
-      summary: ENV["AC_SUMMARY"],
-      releaseNotes: ENV["AC_RELEASE_NOTES"],
-      publishType: ENV["AC_PUBLISH_TYPE"]
-    )
+    personalAPIToken: ENV.fetch("AC_PERSONAL_API_TOKEN", nil),
+    appPath: ENV.fetch("AC_APP_PATH", nil),
+    summary: ENV.fetch("AC_SUMMARY", nil),
+    releaseNotes: ENV.fetch("AC_RELEASE_NOTES", nil),
+    publishType: ENV.fetch("AC_PUBLISH_TYPE", nil)
+  )
 end
