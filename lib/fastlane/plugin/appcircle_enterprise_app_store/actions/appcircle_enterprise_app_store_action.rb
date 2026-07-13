@@ -155,7 +155,7 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Appcircle Enterprise Mobile App Store is your own mobile app store for providing access to in-house apps with a customizable mobile storefront"
+        "Appcircle Enterprise App Store is your own mobile app store for providing access to in-house apps with a customizable mobile storefront"
       end
 
       def self.available_options
