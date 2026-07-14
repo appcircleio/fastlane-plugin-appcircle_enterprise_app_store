@@ -132,4 +132,4 @@ If you have trouble using plugins, check out the [Plugins Troubleshooting](https
 
 ### Reference
 
-For more detailed instructions and support, visit the [Appcircle Enterprise App Store documentation](https://appcircle.io/enterprise-app-store).
+For more detailed instructions and support, visit the [Appcircle Enterprise App Store documentation](https://docs.appcircle.io/marketplace/fastlane/enterprise-app-store).
