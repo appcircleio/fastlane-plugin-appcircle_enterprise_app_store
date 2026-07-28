@@ -3,9 +3,10 @@ require 'uri'
 require 'json'
 require 'rest-client'
 
-BASE_URL = "https://api.appcircle.io"
+module EnterpriseAppStoreUploadService
+  UI = FastlaneCore::UI
+  BASE_URL = "https://api.appcircle.io"
 
-module UploadService
   def self.put_with_retry(url, body, headers, max_retries: 5)
     attempt = 0
     delay = 1.0
@@ -39,20 +40,37 @@ module UploadService
     begin
       info_uri = URI("#{api_endpoint}/store/v1/profiles/app-versions")
       info_uri.query = URI.encode_www_form({ action: 'uploadInformation', fileName: file_name, fileSize: file_size })
-      upload_info = JSON.parse(RestClient.get(info_uri.to_s, auth_header).body)
+
+      UI.message("Getting file upload information...")
+      info_response = RestClient.get(info_uri.to_s, auth_header)
+      if info_response.code.between?(200, 299)
+        UI.success("File upload information retrieved successfully with status code: #{info_response.code}")
+      else
+        UI.error("Failed to retrieve file upload information with status code: #{info_response.code}")
+        raise "Failed to retrieve file upload information."
+      end
+      upload_info = JSON.parse(info_response.body)
       file_id = upload_info['fileId']
       upload_url = upload_info['uploadUrl']
       configuration = upload_info['configuration']
       http_method = (configuration && configuration['httpMethod']) ? configuration['httpMethod'].to_s.upcase : 'PUT'
 
+      UI.message("Uploading file to Appcircle...")
       if http_method == 'POST'
         sign_parameters = configuration['signParameters'] || {}
         payload = {}
         sign_parameters.each { |key, value| payload[key] = value }
         payload['file'] = File.new(file_path, 'rb') # the 'file' field MUST be last
-        RestClient.post(upload_url, payload)
+        upload_response = RestClient.post(upload_url, payload)
       else
-        put_with_retry(upload_url, File.binread(file_path), { content_type: 'application/octet-stream' })
+        upload_response = put_with_retry(upload_url, File.binread(file_path), { content_type: 'application/octet-stream' })
+      end
+
+      if upload_response.code.between?(200, 299)
+        UI.success("File upload finished successfully with status code: #{upload_response.code}")
+      else
+        UI.error("File upload failed with status code: #{upload_response.code}")
+        raise "File upload failed."
       end
 
       commit_uri = URI("#{api_endpoint}/store/v1/profiles/app-versions")
@@ -60,7 +78,16 @@ module UploadService
 
       commit_payload = { fileId: file_id, fileName: file_name }.to_json
       commit_headers = { Authorization: "Bearer #{token}", content_type: :json, accept: 'application/json' }
-      JSON.parse(RestClient.post(commit_uri.to_s, commit_payload, commit_headers).body)
+
+      UI.message("Committing file upload...")
+      commit_response = RestClient.post(commit_uri.to_s, commit_payload, commit_headers)
+      if commit_response.code.between?(200, 299)
+        UI.success("Commit successful with status code: #{commit_response.code}")
+      else
+        UI.error("Commit failed with status code: #{commit_response.code}")
+        raise "Commit failed with status code: #{commit_response.code}"
+      end
+      JSON.parse(commit_response.body)
     rescue RestClient::ExceptionWithResponse => e
       raise e
     rescue StandardError => e

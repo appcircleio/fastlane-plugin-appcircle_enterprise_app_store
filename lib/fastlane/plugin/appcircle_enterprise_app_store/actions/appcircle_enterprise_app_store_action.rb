@@ -103,13 +103,13 @@ module Fastlane
       end
 
       def self.uploadToProfile(appPath, summary, releaseNotes, publishType)
-        response = UploadService.upload_artifact(token: @@apiToken, app: appPath, api_endpoint: @@apiEndpoint)
+        response = EnterpriseAppStoreUploadService.upload_artifact(token: @@apiToken, app: appPath, api_endpoint: @@apiEndpoint)
         result = self.checkTaskStatus(response["taskId"])
 
         if result
-          profileId = UploadService.getProfileId(authToken: @@apiToken, api_endpoint: @@apiEndpoint)
-          appVersions = UploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId, api_endpoint: @@apiEndpoint)
-          appVersionId = UploadService.getVersionId(versionList: appVersions)
+          profileId = EnterpriseAppStoreUploadService.getProfileId(authToken: @@apiToken, api_endpoint: @@apiEndpoint)
+          appVersions = EnterpriseAppStoreUploadService.getAppVersions(auth_token: @@apiToken, entProfileId: profileId, api_endpoint: @@apiEndpoint)
+          appVersionId = EnterpriseAppStoreUploadService.getVersionId(versionList: appVersions)
           if publishType != "0"
             self.publishToStore(profileId, appVersionId, summary, releaseNotes, publishType)
           end
@@ -127,7 +127,7 @@ module Fastlane
           publish_type: publishType,
           api_endpoint: @@apiEndpoint
         }
-        response = UploadService.publishVersion(options)
+        response = EnterpriseAppStoreUploadService.publishVersion(options)
       rescue StandardError => e
         UI.error("App could not publish at Enterprise App Store. #{e&.response}")
         raise e
@@ -155,7 +155,7 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Appcircle Enterprise Mobile App Store is your own mobile app store for providing access to in-house apps with a customizable mobile storefront"
+        "Appcircle Enterprise App Store is your own mobile app store for providing access to in-house apps with a customizable mobile storefront"
       end
 
       def self.available_options

@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.author        = 'appcircleio'
   spec.email         = 'cloud@appcircle.io'
 
-  spec.summary       = 'Efficiently publish your apps to Appcircle Enterprise Store'
+  spec.summary       = 'Appcircle Enterprise App Store is your own mobile app store for providing access to in-house apps with a customizable mobile storefront.'
   spec.homepage      = "https://github.com/appcircleio/fastlane-plugin-appcircle_enterprise_app_store"
   spec.license       = "MIT"
 
