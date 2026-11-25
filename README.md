@@ -80,6 +80,7 @@ After adding the plugin to your project, configure your Fastfile as follows:
 ```
 
 - `personalAPIToken` / `personalAccessKey`: Provide exactly one to authenticate with Appcircle services. Providing both, or neither, fails with a descriptive error.
+- `subOrganizationName` (optional): Sub-organization name of the target enterprise app store profile. See [Sub-Organizations](#sub-organizations).
 - `appPath`: Indicates the file path to the application that will be uploaded to the Appcircle Enterprise App Store.
 - `releaseNote`: Contains the details of changes, updates, and improvements made in the current version of the app being published.
 - `Summary`: Used to provide a brief overview of the version of the app that is about to be published.
@@ -91,12 +92,32 @@ If you run a self-hosted Appcircle installation, point the action to your own en
 
 - `authEndpoint` (optional): Authentication endpoint URL. Defaults to `https://auth.appcircle.io`.
 - `apiEndpoint` (optional): API endpoint URL. Defaults to `https://api.appcircle.io`.
+- Set `authEndpoint` and `apiEndpoint` together. If you set only one of them, the lane stops before it sends a request, so a self-hosted token never goes to the Appcircle cloud.
 
 ```ruby
     appcircle_enterprise_app_store(
       personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
       authEndpoint: "https://auth.my-appcircle.example.com",
       apiEndpoint: "https://api.my-appcircle.example.com",
+      appPath: "$(AC_APP_PATH)",
+      summary: "$(SUMMARY)",
+      releaseNotes: "$(RELEASE_NOTES)",
+      publishType: "$(PUBLISH_TYPE)"
+    )
+```
+
+### Sub-Organizations
+
+If your Personal API Token or Personal Access Key belongs to the root organization and the target enterprise app store profile is in a sub-organization, set the optional `subOrganizationName` parameter. The action then uses a token of that sub-organization for all later requests. If you use a token or key of the sub-organization, you do not need this parameter.
+
+- `subOrganizationName` (optional): The exact name of the sub-organization (case-sensitive). If the action cannot find the sub-organization, or the token cannot access it, the lane fails. The action does not fall back to the root organization.
+
+The option also reads the `AC_SUB_ORGANIZATION_NAME` environment variable. The other Appcircle Fastlane plugins use the same variable, so if your lane sets it for one action, it applies to this action too.
+
+```ruby
+    appcircle_enterprise_app_store(
+      personalAPIToken: "$(AC_PERSONAL_API_TOKEN)",
+      subOrganizationName: "My Sub Organization",
       appPath: "$(AC_APP_PATH)",
       summary: "$(SUMMARY)",
       releaseNotes: "$(RELEASE_NOTES)",
